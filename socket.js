@@ -1,33 +1,75 @@
 const SocketIO = require("socket.io");
+const axios = require("axios");
+const cookieParser = require("cookie-parser");
+const cookie = require("cookie-signature");
 
-module.exports = (server) => {
+module.exports = (server, app, sessionMiddleware) => {
   const io = SocketIO(server, { path: "/socket.io" });
 
-  // 웹 소켓 연결 시
-  io.on("connection", (socket) => {
-    const req = socket.request;
-    const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
-    console.log("새로운 클라이언트 접속!", ip, socket.id, req.ip);
+  app.set("io", io);
+  const room = io.of("/room");
+  const chat = io.of("/chat");
 
-    // 연결 종료 시
+  // socket.request 객체 안에 socket.request.session 객체가 생성된다
+  io.use((socket, next) => {
+    cookieParser(process.env.COOKIE_SECRET)(
+      socket.request,
+      socket.request.res,
+      next
+    );
+    sessionMiddleware(socket.request, socket.request.res, next);
+  });
+
+  room.on("connection", (socket) => {
+    console.log("room 네임스페이스에 접속");
     socket.on("disconnect", () => {
-      console.log("클라이언트 접속 해제", ip, socket.id);
-      clearInterval(socket.interval);
+      console.log("room 네임스페이스 접속 해제");
+    });
+  });
+
+  chat.on("connection", (socket) => {
+    console.log("chat 네임스페이스에 접속");
+    let roomId;
+
+    socket.on("join", (data) => {
+      roomId = data;
+      socket.join(data);
+      socket.to(data).emit("join", {
+        user: "system",
+        chat: `${socket.request.session.color}님이 입장하셨습니다.`,
+      });
     });
 
-    // 에러 시
-    socket.on("error", (error) => {
-      console.error(error);
-    });
+    socket.on("disconnect", async () => {
+      console.log("chat 네임스페이스 접속 해제");
 
-    // 클라이언트로부터 메시지 수신 시
-    socket.on("reply", (data) => {
-      console.log(data);
-    });
+      const currentRoom = io.of("/chat").adapter.rooms[roomId];
+      const userCount = currentRoom?.size || 0;
 
-    // 3초마다 클라이언트로 메시지 전송
-    socket.interval = setInterval(() => {
-      socket.emit("news", "Hello Socket.IO");
-    }, 3000);
+      if (userCount === 0) {
+        const signedCookie = socket.request.signedCookies["connect.sid"];
+        const connectSID = cookie.sign(
+          `${signedCookie}`,
+          process.env.COOKIE_SECRET
+        );
+        await axios
+          .delete(`http://localhost:8005/room/${roomId}`, {
+            headers: {
+              Cookie: `connect.sid=s%3A${connectSID}}`,
+            },
+          })
+          .then(() => {
+            console.log("방 제거 요청 성공");
+          })
+          .catch((error) => {
+            console.error(error);
+          });
+      } else {
+        socket.to(roomId).emit("exit", {
+          user: "system",
+          chat: `${req.session.color}님이 퇴장하셨습니다.`,
+        });
+      }
+    });
   });
 };
