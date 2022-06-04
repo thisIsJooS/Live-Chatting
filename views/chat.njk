@@ -1,8 +1,9 @@
 {% extends 'layout.njk' %}
 
 {% block content %}
-    <h1>{{title}}</h1>
+    <h2>{{title}}</h2>
     <a href="/" id="exit-btn">방 나가기</a>
+    <h4>현재 인원 : <span id="participants-count"></span>명</h4>
     <fieldset>
         <legend>채팅 내용</legend>
         <div id="chat-list">
@@ -44,15 +45,13 @@
     <script>
         const chatBox = document.querySelector('#chat-list')
 
-        const socket = io.connect('http://127.0.0.1:8005/chat', {
+        const socket = io.connect('http://127.0.0.1/chat', {
             path: '/socket.io',
             transports: ['websocket'],
             jsonp: false
         });
 
-        window.onload = () => {
-            socket.emit('join', new URL(location).pathname.split('/').at(-1));
-        }
+        socket.emit('join', new URL(location).pathname.split('/').at(-1));
 
         socket.on('join', function (data) {
             const div = document.createElement('div');
@@ -65,6 +64,10 @@
             document
                 .querySelector('#chat-list')
                 .appendChild(div);
+
+            document
+                .querySelector('#participants-count')
+                .textContent = data.participantsCount;
         });
         socket.on('exit', function (data) {
             const div = document.createElement('div');
@@ -77,6 +80,9 @@
             document
                 .querySelector('#chat-list')
                 .appendChild(div);
+            document
+                .querySelector('#participants-count')
+                .textContent = data.participantsCount;
         });
         socket.on('chat', function (data) {
             const div = document.createElement('div');

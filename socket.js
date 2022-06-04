@@ -27,6 +27,7 @@ module.exports = (server, app, sessionMiddleware) => {
       chat.to(data).emit("join", {
         user: "system",
         chat: `${socket.request.session.color}님이 입장하셨습니다.`,
+        participantsCount: chat.adapter.rooms.get(data).size,
       });
       this.roomId = data;
     });
@@ -44,6 +45,7 @@ module.exports = (server, app, sessionMiddleware) => {
         chat.to(this.roomId).emit("exit", {
           user: "system",
           chat: `${socket.request.session.color}님이 퇴장하셨습니다.`,
+          participantsCount: chat.adapter.rooms.get(this.roomId).size,
         });
       }
       socket.leave(roomId);
