@@ -17,7 +17,10 @@
           <tr data-id="{{room._id}}">
             <td>{{room.title}}</td>
             <td>{{'비밀방' if room.password else '공개방'}}</td>
-            <td class="people-nowmax">{{room.max}}</td>
+            <td>
+              <span id="room{{room._id}}">1</span>
+              <span> / {{room.max}}</span>
+            </td>
             <td style="color: {{room.owner}}">{{room.owner}}</td>
             <td>
               <button
@@ -55,7 +58,13 @@
         : "공개방";
       tr.appendChild(td);
       td = document.createElement("td");
-      td.textContent = data.max;
+      let span = document.createElement('span');
+      span.setAttribute('id', `room${data._id}`)
+      span.textContent = '1';
+      td.appendChild(span)
+      span = document.createElement('span');
+      span.textContent = ` / ${data.max}`;
+      td.appendChild(span)
       tr.appendChild(td);
       td = document.createElement("td");
       td.style.color = data.owner;
@@ -88,6 +97,18 @@
               .removeChild(tr);
           }
         });
+    });
+
+    socket.on('participate', function (data) {
+      document
+        .querySelector(`#room${data.roomId}`)
+        .textContent = `${data.participantsCount}`;
+    });
+
+    socket.on('exit', function (data) {
+      document
+        .querySelector(`#room${data.roomId}`)
+        .textContent = `${data.participantsCount}`;
     });
 
     function addBtnEvent(e) {

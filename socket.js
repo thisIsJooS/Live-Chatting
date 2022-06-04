@@ -30,6 +30,11 @@ module.exports = (server, app, sessionMiddleware) => {
         participantsCount: chat.adapter.rooms.get(data).size,
       });
       this.roomId = data;
+
+      room.emit("participate", {
+        roomId: data,
+        participantsCount: chat.adapter.rooms.get(data).size,
+      });
     });
 
     socket.on("disconnect", async () => {
@@ -47,7 +52,13 @@ module.exports = (server, app, sessionMiddleware) => {
           chat: `${socket.request.session.color}님이 퇴장하셨습니다.`,
           participantsCount: chat.adapter.rooms.get(this.roomId).size,
         });
+
+        room.emit("exit", {
+          roomId: this.roomId,
+          participantsCount: chat.adapter.rooms.get(this.roomId).size,
+        });
       }
+
       socket.leave(roomId);
     });
   });
