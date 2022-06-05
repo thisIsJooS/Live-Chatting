@@ -86,6 +86,31 @@ exports.sendChat = async (req, res, next) => {
   }
 };
 
+exports.sendSys = async (req, res, next) => {
+  try {
+    const msg =
+      req.body.type === "join"
+        ? `${req.session.color}님이 입장하셨습니다.`
+        : `${req.session.color}님이 퇴장하셨습니다.`;
+
+    await Chat.create({
+      room: req.params.id,
+      user: "system",
+      chat: msg,
+    });
+
+    req.app.get("io").of("/chat").to(req.params.id).emit(req.body.type, {
+      user: "system",
+      chat: msg,
+      participantsCount: req.body.participantsCount,
+    });
+    res.send("ok");
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+};
+
 exports.sendGif = async (req, res, next) => {
   try {
     const chat = await Chat.create({

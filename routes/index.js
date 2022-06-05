@@ -10,6 +10,7 @@ const {
   enterRoom,
   removeRoom,
   sendChat,
+  sendSys,
   sendGif,
 } = require("../controllers");
 
@@ -26,6 +27,8 @@ router.get("/room/:id", enterRoom);
 router.delete("/room/:id", removeRoom);
 
 router.post("/room/:id/chat", sendChat);
+
+router.post("/room/:id/sys", sendSys);
 
 try {
   fs.readdirSync("uploads");

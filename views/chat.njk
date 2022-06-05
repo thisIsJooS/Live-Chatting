@@ -47,8 +47,7 @@
 
         const socket = io.connect('http://127.0.0.1/chat', {
             path: '/socket.io',
-            transports: ['websocket'],
-            jsonp: false
+            transports: ['websocket']
         });
 
         socket.emit('join', new URL(location).pathname.split('/').at(-1));
