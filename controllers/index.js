@@ -73,12 +73,17 @@ exports.removeRoom = async (req, res, next) => {
 
 exports.sendChat = async (req, res, next) => {
   try {
-    const chat = await Chat.create({
+    await Chat.create({
       room: req.params.id,
       user: req.session.color,
       chat: req.body.chat,
     });
-    req.app.get("io").of("/chat").to(req.params.id).emit("chat", chat);
+    req.app.get("io").of("/chat").to(req.params.id).emit("chat", {
+      socketID: req.body.sid,
+      room: req.params.id,
+      user: req.session.color,
+      chat: req.body.chat,
+    });
     res.send("ok");
   } catch (error) {
     console.error(error);
@@ -113,12 +118,17 @@ exports.sendSys = async (req, res, next) => {
 
 exports.sendGif = async (req, res, next) => {
   try {
-    const chat = await Chat.create({
+    await Chat.create({
       room: req.params.id,
       user: req.session.color,
       gif: req.file.filename,
     });
-    req.app.get("io").of("/chat").to(req.params.id).emit("chat", chat);
+    req.app.get("io").of("/chat").to(req.params.id).emit("chat", {
+      socketID: req.body.sid,
+      room: req.params.id,
+      user: req.session.color,
+      gif: req.file.filename,
+    });
   } catch (error) {
     console.error(error);
     next(error);
