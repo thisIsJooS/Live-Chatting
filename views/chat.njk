@@ -114,12 +114,20 @@
             name.textContent = data.user;
 
             if (data.user !== '{{user}}') {
-                const dm = document.createElement('div');
+                const dm = document.createElement('span');
                 dm.textContent = '귓속말';
                 dm.className = 'dm';
                 dm.dataset.socketID = data.socketID;
                 dm.addEventListener('click', sendDM);
                 name.appendChild(dm);
+            }
+
+            if ('{{user}}' === '{{room.owner}}' && data.user !== '{{user}}') {
+                const banBtn = document.createElement('span');
+                banBtn.textContent = '강퇴';
+                banBtn.dataset.socketID = data.socketID;
+                banBtn.addEventListener('click', ban);
+                name.appendChild(banBtn);
             }
 
             div.appendChild(name);
@@ -174,5 +182,24 @@
                         console.error(err);
                     });
             });
+
+        function ban(e) {
+            const id = e.target.dataset.socketID;
+            const name = e.target.textContent;
+            const owner = document
+                .querySelector('#room-owner')
+                .textContent;
+
+            if ('{{user}}' === owner && name !== owner) {
+                if (confirm(`${name}을 강퇴하시겠습니까?`)) {
+                    socket.emit('ban', {id});
+                }
+            }
+        }
+
+        socket.on('ban', function () {
+            alert('강퇴되었습니다.');
+            location.href = '/';
+        })
     </script>
 {% endblock %}
